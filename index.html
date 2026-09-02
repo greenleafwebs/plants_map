@@ -329,7 +329,8 @@
                         closeModal();
                         await loadPosts();
                     } else {
-                        alert("保存に失敗しました。もう一度お試しください。");
+                        const errorText = await res.text();
+                        alert("保存に失敗しました。\n\nサーバーからの回答：\n" + errorText);
                     }
                 } catch (err) {
                     alert("通信エラーが発生しました。");
