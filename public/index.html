@@ -1,1 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全国草友マップ</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background-color: #f4f7f4; 
+            color: #333; 
+            margin: 0; 
+            padding: 10px;
+            min-height: 100vh;
+            background-image: url('img/mon.png');
+            background-repeat: repeat;
+            background-size: 350px auto; 
+            background-attachment: fixed;
+        }
+
+        .title-container {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        h1 { 
+            font-size: 20px; 
+            margin: 0 0 6px 0; 
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.88); 
+            padding: 6px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .sub-title { 
+            font-size: 12px; 
+            color: #555; 
+            margin: 0; 
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.88); 
+            padding: 4px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .map-container { 
+            position: relative;
+            width: 100%; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            padding: 10px; 
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        table.japan-map-table { border-collapse: collapse; width: 100%; background-color: #ffffff; border: 2px solid #ccc; table-layout: fixed; border-radius: 6px; overflow: hidden; }
+        table.japan-map-table td { width: 5.55%; height: 0; padding-bottom: 7%; position: relative; text-align: center; vertical-align: middle; }
+        .area-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #333; font-size: min(2.8vw, 11.5px); font-weight: bold; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, 0.12); transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out; transform-origin: center center; letter-spacing: -1px; line-height: 1.15; word-break: break-all; padding: 2px 1px; z-index: 1; }
+        .area-btn:hover { transform: scale(1.15); filter: brightness(1.05); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); border: 1px solid #000; z-index: 50; }
+        
+        .c-0 { background-color: #e0e0e0; color: #777; }
+        .c-1 { background-color: #ff9999; color: #333; }
+        .c-2 { background-color: #66ccff; color: #333; }
+        .c-3 { background-color: #99ff66; color: #333; }
+        .c-4 { background-color: #2cb431; color: #fff; }
+        
+        /* マップの左上の空白に配置する凡例（縦並び） */
+        .legend { 
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start; 
+            gap: 4px; 
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
+            z-index: 10;
+        }
+        .legend-title { font-weight: bold; font-size: 10px; margin-bottom: 2px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-box { width: 10px; height: 10px; border: 1px solid #999; border-radius: 2px; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
+        .modal-header { font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #2cb431; padding-bottom: 5px; }
+        .close-btn { position: absolute; top: 12px; right: 15px; cursor: pointer; font-size: 18px; font-weight: bold; color: #888; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        .submit-btn { width: 100%; background: #2cb431; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 5px; margin-bottom: 12px; }
+        .message-list { max-height: 150px; overflow-y: auto; border-top: 1px dashed #ccc; padding-top: 8px; }
+        .message-item { background: #f9f9f9; padding: 6px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; border-left: 3px solid #2cb431; word-break: break-all; }
+        .message-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+        .name-threads-link { color: #000; font-weight: bold; text-decoration: underline; text-underline-offset: 2px; font-size: 12px; }
+        .name-threads-link:hover { color: #2cb431; }
+    </style>
+</head>
+<body>
+    <div class="title-container">
+        <h1>🌿 全国草友マップ</h1><br>
+        <div class="sub-title">Threadsのアカウントを登録して全国の草友とつながろう！</div>
+    </div>
+    
+    <div class="map-container">
+        <!-- 左上の凡例 -->
+        <div class="legend">
+            <span class="legend-title">【登録人数】</span>
+            <div class="legend-item"><div class="legend-box" style="background:#e0e0e0;"></div>0人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#ff9999;"></div>1〜3人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#66ccff;"></div>4〜9人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#99ff66;"></div>10〜19人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#2cb431;"></div>20人以上</div>
+        </div>
+
+        <table class="japan-map-table" id="japanMap">
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="hokkaido">道北</td><td data-pref="hokkaido">道南</td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="aomori">青森</td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="akita">秋田</td><td data-pref="iwate">岩手</td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="yamagata">山形</td><td data-pref="miyagi">宮城</td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="niigata">新潟</td><td data-pref="fukushima">福島</td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="ishikawa">石川</td><td data-pref="toyama">富山</td><td data-pref="gunma">群馬</td><td data-pref="tochigi">栃木</td><td data-pref="ibaraki">茨城</td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="fukui">福井</td><td data-pref="nagano">長野</td><td data-pref="saitama">埼玉</td><td data-pref="tokyo">東京</td><td data-pref="chiba">千葉</td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td data-pref="shimane">島根</td><td data-pref="tottori">鳥取</td><td data-pref="hyogo">兵庫</td><td data-pref="osaka">大阪</td><td data-pref="kyoto">京都</td><td data-pref="shiga">滋賀</td><td data-pref="gifu">岐阜</td><td data-pref="yamanashi">山梨</td><td data-pref="kanagawa">神奈川</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td data-pref="saga">佐賀</td><td data-pref="fukuoka">福岡</td><td></td><td data-pref="yamaguchi">山口</td><td data-pref="hiroshima">広島</td><td data-pref="okayama">岡山</td><td></td><td data-pref="wakayama">和歌</td><td data-pref="nara">奈良</td><td data-pref="mie">三重</td><td data-pref="aichi">愛知</td><td data-pref="shizuoka">静岡</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td data-pref="nagasaki">長崎</td><td data-pref="kumamoto">熊本</td><td data-pref="oita">大分</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td data-pref="kagoshima">鹿児島</td><td data-pref="miyazaki">宮崎</td><td></td><td></td><td data-pref="ehime">愛媛</td><td data-pref="kagawa">香川</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="kochi">高知</td><td data-pref="tokushima">徳島</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td data-pref="okinawa">沖縄</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">✕</span>
+            <div class="modal-header" id="modalTitle">都道府県名</div>
+            <form id="messageForm">
+                <div class="form-group">
+                    <label>Threads Profile URL <span style="color:red;">*必須</span></label>
+                    <input type="url" id="userThreads" placeholder="https://www.threads.net/@your_id" required>
+                </div>
+                <div class="form-group">
+                    <label>メッセージ（140文字以内） <span style="color:red;">*必須</span></label>
+                    <textarea id="userMessage" rows="3" maxlength="140" placeholder="育てている植物や一言メッセージ..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn" id="submitBtn">書き込む！</button>
+            </form>
+            <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">みんなの声：</div>
+            <div class="message-list" id="messageList"></div>
+        </div>
+    </div>
+
+    <script>
+        const prefecturesData = {
+            "hokkaido":  { name: "北海道", count: 0, messages: [] },
+            "aomori":    { name: "青森県", count: 0, messages: [] },
+            "iwate":     { name: "岩手県", count: 0, messages: [] },
+            "akita":     { name: "秋田県", count: 0, messages: [] },
+            "miyagi":    { name: "宮城県", count: 0, messages: [] },
+            "yamagata":  { name: "山形県", count: 0, messages: [] },
+            "fukushima": { name: "福島県", count: 0, messages: [] },
+            "ibaraki":   { name: "茨城県", count: 0, messages: [] },
+            "tochigi":   { name: "栃木県", count: 0, messages: [] },
+            "gunma":     { name: "群馬県", count: 0, messages: [] },
+            "saitama":   { name: "埼玉県", count: 0, messages: [] },
+            "chiba":     { name: "千葉県", count: 0, messages: [] },
+            "tokyo":     { name: "東京都", count: 0, messages: [] },
+            "kanagawa":  { name: "神奈川県", count: 0, messages: [] },
+            "niigata":   { name: "新潟県", count: 0, messages: [] },
+            "toyama":    { name: "富山県", count: 0, messages: [] },
+            "ishikawa":  { name: "石川県", count: 0, messages: [] },
+            "fukui":     { name: "福井県", count: 0, messages: [] },
+            "yamanashi": { name: "山梨県", count: 0, messages: [] },
+            "nagano":    { name: "長野県", count: 0, messages: [] },
+            "gifu":      { name: "岐阜県", count: 0, messages: [] },
+            "shizuoka":  { name: "静岡県", count: 0, messages: [] },
+            "aichi":     { name: "愛知県", count: 0, messages: [] },
+            "mie":       { name: "三重県", count: 0, messages: [] },
+            "shiga":     { name: "滋賀県", count: 0, messages: [] },
+            "kyoto":     { name: "京都府", count: 0, messages: [] },
+            "osaka":     { name: "大阪府", count: 0, messages: [] },
+            "hyogo":     { name: "兵庫県", count: 0, messages: [] },
+            "nara":      { name: "奈良県", count: 0, messages: [] },
+            "wakayama":  { name: "和歌山県", count: 0, messages: [] },
+            "tottori":   { name: "鳥取県", count: 0, messages: [] },
+            "shimane":   { name: "島根県", count: 0, messages: [] },
+            "okayama":   { name: "岡山県", count: 0, messages: [] },
+            "hiroshima": { name: "広島県", count: 0, messages: [] },
+            "yamaguchi": { name: "山口県", count: 0, messages: [] },
+            "tokushima": { name: "徳島県", count: 0, messages: [] },
+            "kagawa":    { name: "香川県", count: 0, messages: [] },
+            "ehime":     { name: "愛媛県", count: 0, messages: [] },
+            "kochi":     { name: "高知県", count: 0, messages: [] },
+            "fukuoka":   { name: "福岡県", count: 0, messages: [] },
+            "saga":      { name: "佐賀県", count: 0, messages: [] },
+            "nagasaki":  { name: "長崎県", count: 0, messages: [] },
+            "kumamoto":  { name: "熊本県", count: 0, messages: [] },
+            "oita":      { name: "大分県", count: 0, messages: [] },
+            "miyazaki":  { name: "宮崎県", count: 0, messages: [] },
+            "kagoshima": { name: "鹿児島県", count: 0, messages: [] },
+            "okinawa":   { name: "沖縄県", count: 0, messages: [] }
+        };
+
+        let currentActiveKey = null;
+
+        async function loadPosts() {
+            try {
+                const res = await fetch('/api/get');
+                if (!res.ok) {
+                    renderMap();
+                    return;
+                }
+                const posts = await res.json();
+
+                Object.keys(prefecturesData).forEach(k => {
+                    prefecturesData[k].count = 0;
+                    prefecturesData[k].messages = [];
+                });
+
+                if (Array.isArray(posts)) {
+                    posts.forEach(p => {
+                        if (prefecturesData[p.pref]) {
+                            prefecturesData[p.pref].messages.push(p);
+                            prefecturesData[p.pref].count += 1;
+                        }
+                    });
+                }
+
+                renderMap();
+            } catch (err) {
+                console.error("データの取得に失敗しました", err);
+                renderMap();
+            }
+        }
+
+        function getColorClass(count) {
+            if (count >= 20) return "c-4";
+            if (count >= 10) return "c-3";
+            if (count >= 4)  return "c-2";
+            if (count >= 1)  return "c-1";
+            return "c-0";
+        }
+
+        function renderMap() {
+            document.querySelectorAll("td[data-pref]").forEach(td => {
+                const key = td.getAttribute("data-pref");
+                const data = prefecturesData[key];
+                const label = td.innerText.trim();
+                if (data && label) {
+                    const colorClass = getColorClass(data.count);
+                    td.innerHTML = `<a href="#" class="area-btn ${colorClass}" onclick="openModal('${key}')">${label}</a>`;
+                }
+            });
+        }
+
+        function openModal(key) {
+            currentActiveKey = key;
+            const data = prefecturesData[key];
+            document.getElementById("modalTitle").innerText = `${data.name}（${data.count}人）`;
+            const listEl = document.getElementById("messageList");
+
+            if (data.messages.length === 0) {
+                listEl.innerHTML = '<div style="color:#888; font-size:12px;">まだ投稿がありません。1番乗りでメッセージを書こう！</div>';
+            } else {
+                listEl.innerHTML = data.messages.map(m => {
+                    return `
+                        <div class="message-item">
+                            <div class="message-header">
+                                <a href="${m.threads_url}" target="_blank" rel="noopener noreferrer" class="name-threads-link">${m.display_name} ↗</a>
+                            </div>
+                            <div>${m.message}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+            document.getElementById("userThreads").value = "";
+            document.getElementById("userMessage").value = "";
+        }
+
+        document.getElementById("messageForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const threads = document.getElementById("userThreads").value.trim();
+            const text = document.getElementById("userMessage").value.trim();
+
+            const threadsPattern = /^https:\/\/(www\.)?threads\.(net|com)\/.+/i;
+            if (!threadsPattern.test(threads)) {
+                alert("ThreadsのプロフィールURLを入力してください。\n例: https://www.threads.net/@your_id");
+                return;
+            }
+
+            let name = "@Threadsユーザー";
+            const match = threads.match(/threads\.(?:net|com)\/@([a-zA-Z0-9_.]+)/i);
+            if (match && match[1]) {
+                name = "@" + match[1];
+            }
+
+            if (currentActiveKey && prefecturesData[currentActiveKey]) {
+                const btn = document.getElementById("submitBtn");
+                btn.disabled = true;
+                btn.innerText = "送信中...";
+
+                try {
+                    const res = await fetch('/api/post', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pref: currentActiveKey,
+                            threads: threads,
+                            name: name,
+                            text: text
+                        })
+                    });
+
+                    if (res.ok) {
+                        alert(`${prefecturesData[currentActiveKey].name}に書き込みました！`);
+                        closeModal();
+                        await loadPosts();
+                    } else {
+                        const errorText = await res.text();
+                        alert("保存に失敗しました。\n\nサーバーからの回答：\n" + errorText);
+                    }
+                } catch (err) {
+                    alert("通信エラーが発生しました。");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = "書き込む！";
+                }
+            }
+        });
+
+        // 最初の読み込み
+        renderMap();
+        loadPosts();
+    </script>
+</body>
+</html>
 
