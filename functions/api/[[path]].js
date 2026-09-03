@@ -1,4 +1,3 @@
-```js
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -62,9 +61,7 @@ export default {
 
         // 新しい投稿を保存
         await env.DB.prepare(
-          `INSERT INTO posts
-           (pref, threads_url, display_name, message)
-           VALUES (?, ?, ?, ?)`
+          "INSERT INTO posts (pref, threads_url, display_name, message) VALUES (?, ?, ?, ?)"
         )
           .bind(
             pref,
@@ -96,4 +93,3 @@ export default {
     return env.ASSETS.fetch(request);
   }
 };
-```
