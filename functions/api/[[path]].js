@@ -1,3 +1,4 @@
+```js
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -52,6 +53,14 @@ export default {
           );
         }
 
+        // 同じThreadsアカウントの既存投稿を削除
+        await env.DB.prepare(
+          "DELETE FROM posts WHERE threads_url = ?"
+        )
+          .bind(threads)
+          .run();
+
+        // 新しい投稿を保存
         await env.DB.prepare(
           `INSERT INTO posts
            (pref, threads_url, display_name, message)
@@ -87,3 +96,4 @@ export default {
     return env.ASSETS.fetch(request);
   }
 };
+```
