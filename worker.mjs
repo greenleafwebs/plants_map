@@ -163,8 +163,32 @@ export default {
               }
             );
           }
+        }
 
-          // 10分経過していたらリセット
+        // 同じThreadsアカウントの既存投稿を削除
+        await env.DB.prepare(
+          "DELETE FROM posts WHERE threads_url = ?"
+        )
+          .bind(threads)
+          .run();
+
+        // 新しい投稿を保存
+        await env.DB.prepare(
+          "INSERT INTO posts (pref, threads_url, display_name, message) VALUES (?, ?, ?, ?)"
+        )
+          .bind(
+            pref,
+            threads,
+            name || "@Threadsユーザー",
+            text
+          )
+          .run();
+
+        // ★ DBへの保存が成功した後に投稿回数をカウント
+        if (limit) {
+          const elapsed = now - limit.first_post_at;
+
+          // 10分経過していたら新しいカウントを開始
           if (elapsed >= tenMinutes) {
             await env.DB.prepare(
               "UPDATE post_limits SET count = 1, first_post_at = ? WHERE ip = ?"
@@ -189,25 +213,6 @@ export default {
             .bind(ip, now)
             .run();
         }
-
-        // 同じThreadsアカウントの既存投稿を削除
-        await env.DB.prepare(
-          "DELETE FROM posts WHERE threads_url = ?"
-        )
-          .bind(threads)
-          .run();
-
-        // 新しい投稿を保存
-        await env.DB.prepare(
-          "INSERT INTO posts (pref, threads_url, display_name, message) VALUES (?, ?, ?, ?)"
-        )
-          .bind(
-            pref,
-            threads,
-            name || "@Threadsユーザー",
-            text
-          )
-          .run();
 
         return new Response(
           JSON.stringify({
