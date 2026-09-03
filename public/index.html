@@ -88,6 +88,29 @@
         .legend-item { display: flex; align-items: center; gap: 4px; }
         .legend-box { width: 10px; height: 10px; border: 1px solid #999; border-radius: 2px; }
         
+        .notice {
+            width: 100%;
+            max-width: 500px;
+            margin: 12px auto 0;
+            padding: 12px 14px;
+            background: rgba(216, 240, 243, 0.92);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            text-align: left;
+            font-size: 11px;
+            line-height: 1.7;
+            color: #444;
+        }
+        .notice-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+        .notice p { margin: 0 0 6px; }
+        .notice ul { margin: 0; padding-left: 18px; }
+        .notice li { margin-bottom: 2px; }
+        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
         .modal-header { font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #2cb431; padding-bottom: 5px; }
@@ -136,6 +159,18 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="kochi">高知</td><td data-pref="tokushima">徳島</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td data-pref="okinawa">沖縄</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
         </table>
+    </div>
+
+    <div class="notice">
+        <div class="notice-title">🌿 ご利用にあたってのお願い</div>
+        <p>全国草友マップは、観葉植物好きのみなさんが気軽につながるためのマップです。</p>
+        <ul>
+            <li>登録するのは、ご自身のThreadsアカウントのみでお願いします。</li>
+            <li>同じThreadsアカウントで複数回投稿した場合は、最新の投稿内容だけが表示されます。</li>
+            <li>都道府県は現在お住まいの地域で登録してください。</li>
+            <li>誹謗中傷、迷惑行為、なりすまし、営利目的や不適切な利用は禁止です。</li>
+            <li>みんなが気持ちよく利用できるよう、ご協力をお願いいたします。</li>
+        </ul>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -347,4 +382,3 @@
     </script>
 </body>
 </html>
-
