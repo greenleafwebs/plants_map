@@ -1,14 +1,7 @@
 {
   "name": "plants-map",
-  "main": "./worker.js",
+  "main": "./worker.mjs",
   "compatibility_date": "2026-09-02",
-
-  "rules": [
-    {
-      "type": "ESModule",
-      "globs": ["worker.js"]
-    }
-  ],
 
   "assets": {
     "directory": "./public",
