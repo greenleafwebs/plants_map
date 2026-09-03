@@ -1,4 +1,3 @@
-```js
 const NG_WORDS = [
   "セフレ",
   "エロ",
@@ -62,7 +61,9 @@ export default {
         // 必須項目チェック
         if (!pref || !threads || !text) {
           return new Response(
-            JSON.stringify({ error: "必要な項目が入力されていません。" }),
+            JSON.stringify({
+              error: "必要な項目が入力されていません。"
+            }),
             {
               status: 400,
               headers: corsHeaders
@@ -73,7 +74,9 @@ export default {
         // 140文字制限
         if ([...text].length > 140) {
           return new Response(
-            JSON.stringify({ error: "メッセージは140文字以内で入力してください。" }),
+            JSON.stringify({
+              error: "メッセージは140文字以内で入力してください。"
+            }),
             {
               status: 400,
               headers: corsHeaders
@@ -84,7 +87,9 @@ export default {
         // HTMLタグ禁止
         if (/<[^>]*>/i.test(text)) {
           return new Response(
-            JSON.stringify({ error: "HTMLタグは使用できません。" }),
+            JSON.stringify({
+              error: "HTMLタグは使用できません。"
+            }),
             {
               status: 400,
               headers: corsHeaders
@@ -97,7 +102,9 @@ export default {
           /https?:\/\/|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|net|org|jp|co\.jp|info|biz)(\/[^\s]*)?/i.test(text)
         ) {
           return new Response(
-            JSON.stringify({ error: "メッセージにURLを入れることはできません。" }),
+            JSON.stringify({
+              error: "メッセージにURLを入れることはできません。"
+            }),
             {
               status: 400,
               headers: corsHeaders
@@ -114,7 +121,9 @@ export default {
 
         if (ngWord) {
           return new Response(
-            JSON.stringify({ error: "使用できない言葉が含まれています。" }),
+            JSON.stringify({
+              error: "使用できない言葉が含まれています。"
+            }),
             {
               status: 400,
               headers: corsHeaders
@@ -141,10 +150,12 @@ export default {
         if (limit) {
           const elapsed = now - limit.first_post_at;
 
+          // 10分以内に3回以上投稿していたら制限
           if (elapsed < tenMinutes && limit.count >= 3) {
             return new Response(
               JSON.stringify({
-                error: "短時間に投稿できる回数を超えました。10分ほど待ってから再度お試しください。"
+                error:
+                  "短時間に投稿できる回数を超えました。10分ほど待ってから再度お試しください。"
               }),
               {
                 status: 429,
@@ -160,7 +171,9 @@ export default {
             )
               .bind(now, ip)
               .run();
+
           } else {
+            // 投稿回数を1回増やす
             await env.DB.prepare(
               "UPDATE post_limits SET count = count + 1 WHERE ip = ?"
             )
@@ -197,7 +210,9 @@ export default {
           .run();
 
         return new Response(
-          JSON.stringify({ success: true }),
+          JSON.stringify({
+            success: true
+          }),
           {
             headers: corsHeaders
           }
@@ -205,7 +220,9 @@ export default {
 
       } catch (e) {
         return new Response(
-          JSON.stringify({ error: e.message }),
+          JSON.stringify({
+            error: e.message
+          }),
           {
             status: 500,
             headers: corsHeaders
@@ -218,4 +235,3 @@ export default {
     return env.ASSETS.fetch(request);
   }
 };
-```
