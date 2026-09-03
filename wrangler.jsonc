@@ -3,10 +3,17 @@
   "main": "./worker.js",
   "compatibility_date": "2026-09-02",
 
-"assets": {
-  "directory": "./public",
-  "binding": "ASSETS"
-},
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["worker.js"]
+    }
+  ],
+
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
 
   "d1_databases": [
     {
