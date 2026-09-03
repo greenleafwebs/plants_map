@@ -1,6 +1,6 @@
 {
   "name": "plants-map",
-  "main": "functions/api/[[path]].js",
+  "main": "./worker.js",
   "compatibility_date": "2026-09-02",
 
 "assets": {
