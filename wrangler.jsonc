@@ -3,10 +3,10 @@
   "main": "functions/api/[[path]].js",
   "compatibility_date": "2026-09-02",
 
-  "assets": {
-    "directory": ".",
-    "binding": "ASSETS"
-  },
+"assets": {
+  "directory": "./public",
+  "binding": "ASSETS"
+},
 
   "d1_databases": [
     {
