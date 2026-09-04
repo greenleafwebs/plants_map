@@ -26,52 +26,33 @@ export default {
     };
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, {
+        headers: corsHeaders
+      });
     }
 
     // =========================================================
-    // Threadsアカウント存在確認テスト
+    // Threadsアカウント存在確認
     // =========================================================
 
-    if (
-      url.pathname === "/api/test-threads" &&
-      request.method === "GET"
-    ) {
+    async function checkThreadsAccount(threadsUrl) {
       try {
-        const targetUrl = url.searchParams.get("url");
-
-        if (!targetUrl) {
-          return new Response(
-            JSON.stringify({
-              error: "urlパラメータがありません。"
-            }),
-            {
-              status: 400,
-              headers: corsHeaders
-            }
-          );
-        }
+        const target = new URL(threadsUrl);
 
         // -----------------------------------------------------
         // ThreadsのURLだけ許可
         // -----------------------------------------------------
 
-        const target = new URL(targetUrl);
-
         if (
           target.hostname !== "www.threads.com" &&
           target.hostname !== "threads.com"
         ) {
-          return new Response(
-            JSON.stringify({
-              error:
-                "ThreadsのURLを指定してください。"
-            }),
-            {
-              status: 400,
-              headers: corsHeaders
-            }
-          );
+          return {
+            success: false,
+            exists: false,
+            error:
+              "ThreadsのURLを指定してください。"
+          };
         }
 
         // -----------------------------------------------------
@@ -83,31 +64,30 @@ export default {
         );
 
         if (!match) {
-          return new Response(
-            JSON.stringify({
-              error:
-                "ThreadsプロフィールURLの形式が正しくありません。"
-            }),
-            {
-              status: 400,
-              headers: corsHeaders
-            }
-          );
+          return {
+            success: false,
+            exists: false,
+            error:
+              "ThreadsプロフィールURLの形式が正しくありません。"
+          };
         }
 
         const username = match[1];
 
         // -----------------------------------------------------
-        // Browser Runで完全レンダリング
+        // Browser Run
         // -----------------------------------------------------
 
         const browserResponse =
-          await env.BROWSER.quickAction("content", {
-            url: targetUrl,
-            gotoOptions: {
-              waitUntil: "networkidle2"
+          await env.BROWSER.quickAction(
+            "content",
+            {
+              url: threadsUrl,
+              gotoOptions: {
+                waitUntil: "networkidle2"
+              }
             }
-          });
+          );
 
         const renderedHtml =
           await browserResponse.text();
@@ -115,19 +95,12 @@ export default {
         // -----------------------------------------------------
         // Browser Runのレスポンスを解析
         // -----------------------------------------------------
-        //
-        // Browser Runのcontentは
-        //
-        // {"success":true,"result":"<!DOCTYPE html>..."}
-        //
-        // の形式になる場合があるため、
-        // resultの中身を取り出す。
-        // -----------------------------------------------------
 
         let html = renderedHtml;
 
         try {
-          const parsed = JSON.parse(renderedHtml);
+          const parsed =
+            JSON.parse(renderedHtml);
 
           if (
             parsed &&
@@ -136,11 +109,22 @@ export default {
             html = parsed.result;
           }
         } catch (e) {
-          // JSONでなければ、そのままHTMLとして扱う
+          // JSONでなければそのままHTMLとして扱う
         }
 
-        const lowerHtml =
-          html.toLowerCase();
+        // -----------------------------------------------------
+        // HTMLが極端に短い場合
+        // -----------------------------------------------------
+
+        if (!html || html.length < 500) {
+          return {
+            success: true,
+            exists: false,
+            username,
+            reason:
+              "プロフィール情報を取得できませんでした。"
+          };
+        }
 
         // -----------------------------------------------------
         // title
@@ -199,21 +183,7 @@ export default {
             : null;
 
         // -----------------------------------------------------
-        // description
-        // -----------------------------------------------------
-
-        const descriptionMatch =
-          html.match(
-            /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i
-          );
-
-        const description =
-          descriptionMatch
-            ? descriptionMatch[1]
-            : null;
-
-        // -----------------------------------------------------
-        // usernameの正規表現用エスケープ
+        // usernameを正規表現用にエスケープ
         // -----------------------------------------------------
 
         const escapedUsername =
@@ -221,30 +191,6 @@ export default {
             /[.*+?^${}()|[\]\\]/g,
             "\\$&"
           );
-
-        // -----------------------------------------------------
-        // username出現回数
-        // -----------------------------------------------------
-
-        const exactUsernameCount =
-          (
-            html.match(
-              new RegExp(
-                escapedUsername,
-                "gi"
-              )
-            ) || []
-          ).length;
-
-        const atUsernameCount =
-          (
-            html.match(
-              new RegExp(
-                "@" + escapedUsername,
-                "gi"
-              )
-            ) || []
-          ).length;
 
         // -----------------------------------------------------
         // プロフィールtitle判定
@@ -332,20 +278,7 @@ export default {
             .includes("/login");
 
         // -----------------------------------------------------
-        // プロフィール情報の存在確認
-        // -----------------------------------------------------
-
-        const followersFound =
-          lowerHtml.includes("followers");
-
-        const repliesFound =
-          lowerHtml.includes("replies");
-
-        const postsFound =
-          lowerHtml.includes("posts");
-
-        // -----------------------------------------------------
-        // 強い判定材料の数
+        // 強い判定材料
         // -----------------------------------------------------
 
         const strongSignals = [
@@ -358,75 +291,69 @@ export default {
         // -----------------------------------------------------
         // 最終判定
         // -----------------------------------------------------
-        //
-        // ログインページではなく、
-        // プロフィールを示す強い条件が2つ以上
-        // あれば「存在する」と判定。
-        // -----------------------------------------------------
 
         const exists =
           !loginPage &&
           strongSignals >= 2;
 
+        return {
+          success: true,
+          exists,
+          username,
+          strongSignals,
+          title,
+          canonicalUrl,
+          ogType,
+          ogTitle,
+          loginPage
+        };
+
+      } catch (e) {
+        return {
+          success: false,
+          exists: false,
+          error: e.message
+        };
+      }
+    }
+
+    // =========================================================
+    // Threadsアカウント存在確認テスト
+    // =========================================================
+    //
+    // 本番投稿には使わず、動作確認用として残しておく。
+    //
+    // =========================================================
+
+    if (
+      url.pathname === "/api/test-threads" &&
+      request.method === "GET"
+    ) {
+      try {
+        const targetUrl =
+          url.searchParams.get("url");
+
+        if (!targetUrl) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "urlパラメータがありません。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        const result =
+          await checkThreadsAccount(
+            targetUrl
+          );
+
         return new Response(
           JSON.stringify(
-            {
-              target_url: targetUrl,
-
-              username,
-
-              browser_run: true,
-
-              exists,
-
-              login_page: loginPage,
-
-              strong_signals:
-                strongSignals,
-
-              rendered_html_length:
-                html.length,
-
-              title,
-
-              canonical_url:
-                canonicalUrl,
-
-              og_type:
-                ogType,
-
-              og_title:
-                ogTitle,
-
-              description,
-
-              profile_title_found:
-                profileTitleFound,
-
-              profile_og_title_found:
-                profileOgTitleFound,
-
-              canonical_matches:
-                canonicalMatches,
-
-              og_type_profile:
-                ogTypeProfile,
-
-              exact_username_count:
-                exactUsernameCount,
-
-              at_username_count:
-                atUsernameCount,
-
-              followers_found:
-                followersFound,
-
-              replies_found:
-                repliesFound,
-
-              posts_found:
-                postsFound
-            },
+            result,
             null,
             2
           ),
@@ -438,8 +365,7 @@ export default {
       } catch (e) {
         return new Response(
           JSON.stringify({
-            error: e.message,
-            stack: e.stack || null
+            error: e.message
           }),
           {
             status: 500,
@@ -632,9 +558,60 @@ export default {
           );
         }
 
+        // =====================================================
+        // Threadsアカウント存在確認
+        // =====================================================
+        //
+        // D1へ保存する前に確認する。
+        //
+        // =====================================================
+
+        const threadsCheck =
+          await checkThreadsAccount(
+            threads
+          );
+
         // -----------------------------------------------------
+        // Threads URL自体が不正
+        // -----------------------------------------------------
+
+        if (
+          !threadsCheck.success
+        ) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "Threadsアカウントを確認できませんでした。正しいThreadsプロフィールURLを入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // -----------------------------------------------------
+        // アカウントが存在しない
+        // -----------------------------------------------------
+
+        if (
+          !threadsCheck.exists
+        ) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "実在するThreadsアカウントを入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // =====================================================
         // IPアドレス取得
-        // -----------------------------------------------------
+        // =====================================================
 
         const ip =
           request.headers.get(
@@ -645,10 +622,10 @@ export default {
           ) ||
           "unknown";
 
-        // -----------------------------------------------------
+        // =====================================================
         // 投稿制限
         // 10分間に3回まで
-        // -----------------------------------------------------
+        // =====================================================
 
         const now =
           Date.now();
@@ -685,9 +662,9 @@ export default {
           }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // 同じThreads URLの投稿を削除
-        // -----------------------------------------------------
+        // =====================================================
 
         await env.DB.prepare(
           "DELETE FROM posts WHERE threads_url = ?"
@@ -695,9 +672,9 @@ export default {
           .bind(threads)
           .run();
 
-        // -----------------------------------------------------
+        // =====================================================
         // 投稿保存
-        // -----------------------------------------------------
+        // =====================================================
 
         await env.DB.prepare(
           "INSERT INTO posts (pref, threads_url, display_name, message, delete_key) VALUES (?, ?, ?, ?, ?)"
@@ -712,9 +689,9 @@ export default {
           )
           .run();
 
-        // -----------------------------------------------------
+        // =====================================================
         // 投稿回数更新
-        // -----------------------------------------------------
+        // =====================================================
 
         if (limit) {
           const elapsed =
@@ -751,6 +728,10 @@ export default {
             )
             .run();
         }
+
+        // =====================================================
+        // 投稿成功
+        // =====================================================
 
         return new Response(
           JSON.stringify({
