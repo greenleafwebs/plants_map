@@ -110,25 +110,27 @@ export default {
 
         const html = await response.text();
 
-        // =====================================================
-        // HTML内の特徴的な文字列を調査
-        // =====================================================
-
         const lowerHtml = html.toLowerCase();
+
+        // =====================================================
+        // アカウント情報らしき文字列を調査
+        // =====================================================
 
         const keywords = [
           username,
+          "is_profile",
           "profile",
           "username",
-          "og:title",
-          "og:description",
+          "full_name",
+          "biography",
+          "user_id",
+          "\"id\"",
+          "\"pk\"",
+          "not_found",
           "not found",
           "page not found",
-          "見つかりません",
-          "ページが見つかりません",
-          "instagramアカウントでログイン",
-          "ログイン",
-          "threads"
+          "error",
+          "status"
         ];
 
         const matches = [];
@@ -137,10 +139,11 @@ export default {
           if (!keyword) continue;
 
           const lowerKeyword = keyword.toLowerCase();
+
           let searchFrom = 0;
           let count = 0;
 
-          while (count < 3) {
+          while (count < 5) {
             const index = lowerHtml.indexOf(
               lowerKeyword,
               searchFrom
@@ -150,14 +153,15 @@ export default {
               break;
             }
 
-            const start = Math.max(0, index - 150);
+            const start = Math.max(0, index - 250);
             const end = Math.min(
               html.length,
-              index + keyword.length + 150
+              index + keyword.length + 250
             );
 
             matches.push({
               keyword: keyword,
+              position: index,
               context: html.substring(start, end)
             });
 
@@ -166,30 +170,96 @@ export default {
           }
         }
 
-        // 重複した検索結果を削除
-        const uniqueMatches = [];
-        const seen = new Set();
+        // =====================================================
+        // HTML内のJSONらしき部分を調査
+        // =====================================================
 
-        for (const item of matches) {
-          const key =
-            item.keyword + "|" + item.context;
+        const scriptMatches = [];
 
-          if (!seen.has(key)) {
-            seen.add(key);
-            uniqueMatches.push(item);
-          }
+        const scriptRegex =
+          /<script[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi;
+
+        let scriptMatch;
+        let scriptCount = 0;
+
+        while (
+          (scriptMatch = scriptRegex.exec(html)) !== null &&
+          scriptCount < 10
+        ) {
+          const content = scriptMatch[1];
+
+          scriptMatches.push({
+            length: content.length,
+            preview: content.substring(0, 1000)
+          });
+
+          scriptCount++;
         }
 
+        // =====================================================
+        // title / description を取得
+        // =====================================================
+
+        const titleMatch = html.match(
+          /<title[^>]*>([\s\S]*?)<\/title>/i
+        );
+
+        const descriptionMatch = html.match(
+          /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i
+        );
+
+        const ogTitleMatch = html.match(
+          /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i
+        );
+
+        const ogDescriptionMatch = html.match(
+          /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i
+        );
+
+        // =====================================================
+        // 結果を返す
+        // =====================================================
+
         return new Response(
-          JSON.stringify({
-            success: true,
-            requested_url: threadsUrl,
-            final_url: response.url,
-            status: response.status,
-            username: username,
-            html_length: html.length,
-            matches: uniqueMatches
-          }),
+          JSON.stringify(
+            {
+              success: true,
+
+              requested_url: threadsUrl,
+
+              final_url: response.url,
+
+              status: response.status,
+
+              username: username,
+
+              html_length: html.length,
+
+              title: titleMatch
+                ? titleMatch[1]
+                : null,
+
+              description: descriptionMatch
+                ? descriptionMatch[1]
+                : null,
+
+              og_title: ogTitleMatch
+                ? ogTitleMatch[1]
+                : null,
+
+              og_description: ogDescriptionMatch
+                ? ogDescriptionMatch[1]
+                : null,
+
+              json_script_count: scriptMatches.length,
+
+              json_scripts: scriptMatches,
+
+              matches: matches
+            },
+            null,
+            2
+          ),
           {
             headers: corsHeaders
           }
