@@ -110,28 +110,73 @@ export default {
 
         const html = await response.text();
 
-        // ユーザー名がHTMLに含まれているか確認
-        const containsUsername =
-          username !== "" &&
-          html.toLowerCase().includes(username.toLowerCase());
+        // =====================================================
+        // HTML内の特徴的な文字列を調査
+        // =====================================================
 
-        // ユーザー名が見つかった位置の前後を確認
-        let context = null;
+        const lowerHtml = html.toLowerCase();
 
-        if (containsUsername) {
-          const lowerHtml = html.toLowerCase();
-          const lowerUsername = username.toLowerCase();
+        const keywords = [
+          username,
+          "profile",
+          "username",
+          "og:title",
+          "og:description",
+          "not found",
+          "page not found",
+          "見つかりません",
+          "ページが見つかりません",
+          "instagramアカウントでログイン",
+          "ログイン",
+          "threads"
+        ];
 
-          const index = lowerHtml.indexOf(lowerUsername);
+        const matches = [];
 
-          if (index !== -1) {
-            const start = Math.max(0, index - 200);
-            const end = Math.min(
-              html.length,
-              index + username.length + 200
+        for (const keyword of keywords) {
+          if (!keyword) continue;
+
+          const lowerKeyword = keyword.toLowerCase();
+          let searchFrom = 0;
+          let count = 0;
+
+          while (count < 3) {
+            const index = lowerHtml.indexOf(
+              lowerKeyword,
+              searchFrom
             );
 
-            context = html.substring(start, end);
+            if (index === -1) {
+              break;
+            }
+
+            const start = Math.max(0, index - 150);
+            const end = Math.min(
+              html.length,
+              index + keyword.length + 150
+            );
+
+            matches.push({
+              keyword: keyword,
+              context: html.substring(start, end)
+            });
+
+            searchFrom = index + lowerKeyword.length;
+            count++;
+          }
+        }
+
+        // 重複した検索結果を削除
+        const uniqueMatches = [];
+        const seen = new Set();
+
+        for (const item of matches) {
+          const key =
+            item.keyword + "|" + item.context;
+
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueMatches.push(item);
           }
         }
 
@@ -143,8 +188,7 @@ export default {
             status: response.status,
             username: username,
             html_length: html.length,
-            contains_username: containsUsername,
-            context: context
+            matches: uniqueMatches
           }),
           {
             headers: corsHeaders
