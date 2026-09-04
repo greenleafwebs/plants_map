@@ -56,13 +56,32 @@ export default {
       try {
         const body = await request.json();
 
-        const { pref, threads, name, text } = body;
+        const {
+          pref,
+          threads,
+          name,
+          text,
+          delete_key
+        } = body;
 
         // 必須項目チェック
-        if (!pref || !threads || !text) {
+        if (!pref || !threads || !text || !delete_key) {
           return new Response(
             JSON.stringify({
               error: "必要な項目が入力されていません。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // 削除キーは4桁の数字のみ
+        if (!/^\d{4}$/.test(delete_key)) {
+          return new Response(
+            JSON.stringify({
+              error: "削除キーは4桁の数字で入力してください。"
             }),
             {
               status: 400,
@@ -174,17 +193,20 @@ export default {
 
         // 新しい投稿を保存
         await env.DB.prepare(
-          "INSERT INTO posts (pref, threads_url, display_name, message) VALUES (?, ?, ?, ?)"
+          `INSERT INTO posts
+           (pref, threads_url, display_name, message, delete_key)
+           VALUES (?, ?, ?, ?, ?)`
         )
           .bind(
             pref,
             threads,
             name || "@Threadsユーザー",
-            text
+            text,
+            delete_key
           )
           .run();
 
-        // ★ DBへの保存が成功した後に投稿回数をカウント
+        // DBへの保存が成功した後に投稿回数をカウント
         if (limit) {
           const elapsed = now - limit.first_post_at;
 
@@ -212,6 +234,83 @@ export default {
           )
             .bind(ip, now)
             .run();
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true
+          }),
+          {
+            headers: corsHeaders
+          }
+        );
+
+      } catch (e) {
+        return new Response(
+          JSON.stringify({
+            error: e.message
+          }),
+          {
+            status: 500,
+            headers: corsHeaders
+          }
+        );
+      }
+    }
+
+    // 投稿を削除
+    if (url.pathname === "/api/delete" && request.method === "POST") {
+      try {
+        const body = await request.json();
+
+        const {
+          threads,
+          delete_key
+        } = body;
+
+        // 必須項目チェック
+        if (!threads || !delete_key) {
+          return new Response(
+            JSON.stringify({
+              error: "Threads URLと削除キーを入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // 削除キーは4桁の数字のみ
+        if (!/^\d{4}$/.test(delete_key)) {
+          return new Response(
+            JSON.stringify({
+              error: "削除キーは4桁の数字で入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // Threads URLと削除キーが一致する投稿だけ削除
+        const result = await env.DB.prepare(
+          "DELETE FROM posts WHERE threads_url = ? AND delete_key = ?"
+        )
+          .bind(threads, delete_key)
+          .run();
+
+        if (!result.meta || result.meta.changes === 0) {
+          return new Response(
+            JSON.stringify({
+              error: "削除キーが一致しません。"
+            }),
+            {
+              status: 403,
+              headers: corsHeaders
+            }
+          );
         }
 
         return new Response(
