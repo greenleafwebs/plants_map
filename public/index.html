@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -56,56 +57,10 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
         }
         
-        table.japan-map-table { 
-            border-collapse: collapse; 
-            width: 100%; 
-            background-color: #D8F0F3; 
-            border: 2px solid #ccc; 
-            table-layout: fixed; 
-            border-radius: 6px; 
-            overflow: hidden; 
-        }
-
-        table.japan-map-table td { 
-            width: 5.55%; 
-            height: 0; 
-            padding-bottom: 7%; 
-            position: relative; 
-            text-align: center; 
-            vertical-align: middle; 
-        }
-
-        .area-btn { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            text-decoration: none; 
-            color: #333; 
-            font-size: min(2.8vw, 11.5px); 
-            font-weight: bold; 
-            box-sizing: border-box; 
-            border: 1px solid rgba(0, 0, 0, 0.12); 
-            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out; 
-            transform-origin: center center; 
-            letter-spacing: -1px; 
-            line-height: 1.15; 
-            word-break: break-all; 
-            padding: 2px 1px; 
-            z-index: 1; 
-        }
-
-        .area-btn:hover { 
-            transform: scale(1.15); 
-            filter: brightness(1.05); 
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
-            border: 1px solid #000; 
-            z-index: 50; 
-        }
+        table.japan-map-table { border-collapse: collapse; width: 100%; background-color: #D8F0F3; border: 2px solid #ccc; table-layout: fixed; border-radius: 6px; overflow: hidden; }
+        table.japan-map-table td { width: 5.55%; height: 0; padding-bottom: 7%; position: relative; text-align: center; vertical-align: middle; }
+        .area-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #333; font-size: min(2.8vw, 11.5px); font-weight: bold; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, 0.12); transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out; transform-origin: center center; letter-spacing: -1px; line-height: 1.15; word-break: break-all; padding: 2px 1px; z-index: 1; }
+        .area-btn:hover { transform: scale(1.15); filter: brightness(1.05); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); border: 1px solid #000; z-index: 50; }
         
         .c-0 { background-color: #e0e0e0; color: #777; }
         .c-1 { background-color: #ff9999; color: #333; }
@@ -130,25 +85,9 @@
             border: 1px solid #eee;
             z-index: 10;
         }
-
-        .legend-title { 
-            font-weight: bold; 
-            font-size: 10px; 
-            margin-bottom: 2px; 
-        }
-
-        .legend-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 4px; 
-        }
-
-        .legend-box { 
-            width: 10px; 
-            height: 10px; 
-            border: 1px solid #999; 
-            border-radius: 2px; 
-        }
+        .legend-title { font-weight: bold; font-size: 10px; margin-bottom: 2px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-box { width: 10px; height: 10px; border: 1px solid #999; border-radius: 2px; }
         
         .notice {
             width: 100%;
@@ -163,155 +102,46 @@
             line-height: 1.7;
             color: #444;
         }
-
         .notice-title {
             text-align: center;
             font-weight: bold;
             font-size: 13px;
             margin-bottom: 7px;
         }
-
         .notice p { margin: 0 0 6px; }
         .notice ul { margin: 0; padding-left: 18px; }
         .notice li { margin-bottom: 2px; }
         
-        .modal-overlay { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0, 0, 0, 0.5); 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 100; 
-        }
-
-        .modal-content { 
-            background: #fff; 
-            padding: 20px; 
-            border-radius: 8px; 
-            width: 90%; 
-            max-width: 400px; 
-            text-align: left; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-            position: relative; 
-        }
-
-        .modal-header { 
-            font-size: 16px; 
-            font-weight: bold; 
-            margin-bottom: 12px; 
-            border-bottom: 2px solid #2cb431; 
-            padding-bottom: 5px; 
-        }
-
-        .close-btn { 
-            position: absolute; 
-            top: 12px; 
-            right: 15px; 
-            cursor: pointer; 
-            font-size: 18px; 
-            font-weight: bold; 
-            color: #888; 
-        }
-
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
+        .modal-header { font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #2cb431; padding-bottom: 5px; }
+        .close-btn { position: absolute; top: 12px; right: 15px; cursor: pointer; font-size: 18px; font-weight: bold; color: #888; }
         .form-group { margin-bottom: 10px; }
-
-        .form-group label { 
-            display: block; 
-            font-size: 11px; 
-            font-weight: bold; 
-            margin-bottom: 3px; 
-        }
-
-        .form-group input, 
-        .form-group textarea { 
-            width: 100%; 
-            padding: 8px; 
-            box-sizing: border-box; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            font-size: 13px; 
-        }
-
-        .submit-btn { 
-            width: 100%; 
-            background: #2cb431; 
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 5px; 
-            margin-bottom: 12px; 
-        }
-
-        .message-list { 
-            max-height: 150px; 
-            overflow-y: auto; 
-            border-top: 1px dashed #ccc; 
-            padding-top: 8px; 
-        }
-
-        .message-item { 
-            background: #f9f9f9; 
-            padding: 6px 8px; 
-            border-radius: 4px; 
-            margin-bottom: 6px; 
-            font-size: 12px; 
-            border-left: 3px solid #2cb431; 
-            word-break: break-all; 
-        }
-
-        .message-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 3px; 
-        }
-
-        .name-threads-link { 
-            color: #000; 
-            font-weight: bold; 
-            text-decoration: underline; 
-            text-underline-offset: 2px; 
-            font-size: 12px; 
-        }
-
+        .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        .submit-btn { width: 100%; background: #2cb431; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 5px; margin-bottom: 12px; }
+        .message-list { max-height: 150px; overflow-y: auto; border-top: 1px dashed #ccc; padding-top: 8px; }
+        .message-item { background: #f9f9f9; padding: 6px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; border-left: 3px solid #2cb431; word-break: break-all; }
+        .message-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+        .name-threads-link { color: #000; font-weight: bold; text-decoration: underline; text-underline-offset: 2px; font-size: 12px; }
         .name-threads-link:hover { color: #2cb431; }
     </style>
 </head>
-
 <body>
-
     <div class="title-container">
         <h1>🌿 全国草友マップ</h1><br>
         <div class="sub-title">Threadsのアカウントを登録して全国の草友とつながろう！</div>
     </div>
     
     <div class="map-container">
-
         <!-- 左上の凡例 -->
         <div class="legend">
             <span class="legend-title">【登録人数】</span>
-            <div class="legend-item">
-                <div class="legend-box" style="background:#e0e0e0;"></div>0人
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background:#ff9999;"></div>1〜3人
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background:#66ccff;"></div>4〜9人
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background:#99ff66;"></div>10〜19人
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background:#2cb431;"></div>20人以上
-            </div>
+            <div class="legend-item"><div class="legend-box" style="background:#e0e0e0;"></div>0人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#ff9999;"></div>1〜3人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#66ccff;"></div>4〜9人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#99ff66;"></div>10〜19人</div>
+            <div class="legend-item"><div class="legend-box" style="background:#2cb431;"></div>20人以上</div>
         </div>
 
         <table class="japan-map-table" id="japanMap">
@@ -321,8 +151,8 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="akita">秋田</td><td data-pref="iwate">岩手</td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="yamagata">山形</td><td data-pref="miyagi">宮城</td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="niigata">新潟</td><td data-pref="fukushima">福島</td><td></td></tr>
-            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="ishikawa">石川</td><td data-pref="toyama">富山</td><td data-pref="gunma">群馬</td><td data-pref="tochigi">栃木</td><td data-pref="ibaraki">茨城</td><td></td><td></td></tr>
-            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="fukui">福井</td><td data-pref="nagano">長野</td><td data-pref="saitama">埼玉</td><td data-pref="tokyo">東京</td><td data-pref="chiba">千葉</td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="ishikawa">石川</td><td data-pref="toyama">富山</td><td data-pref="gunma">群馬</td><td data-pref="tochigi">栃木</td><td data-pref="ibaraki">茨城</td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-pref="fukui">福井</td><td data-pref="nagano">長野</td><td data-pref="saitama">埼玉</td><td data-pref="tokyo">東京</td><td data-pref="chiba">千葉</td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td data-pref="shimane">島根</td><td data-pref="tottori">鳥取</td><td data-pref="hyogo">兵庫</td><td data-pref="osaka">大阪</td><td data-pref="kyoto">京都</td><td data-pref="shiga">滋賀</td><td data-pref="gifu">岐阜</td><td data-pref="yamanashi">山梨</td><td data-pref="kanagawa">神奈川</td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td data-pref="saga">佐賀</td><td data-pref="fukuoka">福岡</td><td></td><td data-pref="yamaguchi">山口</td><td data-pref="hiroshima">広島</td><td data-pref="okayama">岡山</td><td></td><td data-pref="wakayama">和歌</td><td data-pref="nara">奈良</td><td data-pref="mie">三重</td><td data-pref="aichi">愛知</td><td data-pref="shizuoka">静岡</td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td data-pref="nagasaki">長崎</td><td data-pref="kumamoto">熊本</td><td data-pref="oita">大分</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -346,78 +176,44 @@
 
     <div class="modal-overlay" id="modal">
         <div class="modal-content">
-
             <span class="close-btn" onclick="closeModal()">✕</span>
-
             <div class="modal-header" id="modalTitle">都道府県名</div>
 
             <form id="messageForm">
+                <div class="form-group">
+                    <label>Threads Profile URL <span style="color:red;">*必須</span></label>
+                    <input type="url" id="userThreads" placeholder="https://www.threads.net/@your_id" required>
+                </div>
 
                 <div class="form-group">
-                    <label>
-                        Threads Profile URL
-                        <span style="color:red;">*必須</span>
-                    </label>
-                    <input
-                        type="url"
-                        id="userThreads"
-                        placeholder="https://www.threads.net/@your_id"
-                        required
-                    >
+                    <label>メッセージ（140文字以内） <span style="color:red;">*必須</span></label>
+                    <textarea id="userMessage" rows="3" maxlength="140" placeholder="育てている植物や一言メッセージ..." required></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>
-                        メッセージ（140文字以内）
-                        <span style="color:red;">*必須</span>
-                    </label>
-                    <textarea
-                        id="userMessage"
-                        rows="3"
-                        maxlength="140"
-                        placeholder="育てている植物や一言メッセージ..."
-                        required
-                    ></textarea>
-                </div>
-
-                <!-- ★追加：4桁の削除キー -->
-                <div class="form-group">
-                    <label>
-                        削除キー（4桁の数字）
+                        削除キー（4文字の英数字）
                         <span style="color:red;">*必須</span>
                     </label>
                     <input
                         type="text"
                         id="userDeleteKey"
-                        inputmode="numeric"
                         maxlength="4"
-                        pattern="[0-9]{4}"
-                        placeholder="1234"
+                        pattern="[A-Za-z0-9]{4}"
+                        placeholder="A123"
                         required
                     >
                 </div>
 
-                <button
-                    type="submit"
-                    class="submit-btn"
-                    id="submitBtn"
-                >
-                    書き込む！
-                </button>
-
+                <button type="submit" class="submit-btn" id="submitBtn">書き込む！</button>
             </form>
 
-            <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">
-                みんなの声：
-            </div>
-
+            <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">みんなの声：</div>
             <div class="message-list" id="messageList"></div>
-
         </div>
     </div>
 
     <script>
-
         const prefecturesData = {
             "hokkaido":  { name: "北海道", count: 0, messages: [] },
             "aomori":    { name: "青森県", count: 0, messages: [] },
@@ -443,7 +239,7 @@
             "shizuoka":  { name: "静岡県", count: 0, messages: [] },
             "aichi":     { name: "愛知県", count: 0, messages: [] },
             "mie":       { name: "三重県", count: 0, messages: [] },
-            "shiga":     { name: "滋賀県", count: 0, messages: [] },
+            "shiga":      { name: "滋賀県", count: 0, messages: [] },
             "kyoto":     { name: "京都府", count: 0, messages: [] },
             "osaka":     { name: "大阪府", count: 0, messages: [] },
             "hyogo":     { name: "兵庫県", count: 0, messages: [] },
@@ -471,9 +267,7 @@
         let currentActiveKey = null;
 
         async function loadPosts() {
-
             try {
-
                 const res = await fetch('/api/get');
 
                 if (!res.ok) {
@@ -489,62 +283,44 @@
                 });
 
                 if (Array.isArray(posts)) {
-
                     posts.forEach(p => {
-
                         if (prefecturesData[p.pref]) {
                             prefecturesData[p.pref].messages.push(p);
                             prefecturesData[p.pref].count += 1;
                         }
-
                     });
-
                 }
 
                 renderMap();
 
             } catch (err) {
-
                 console.error("データの取得に失敗しました", err);
                 renderMap();
-
             }
-
         }
 
         function getColorClass(count) {
-
             if (count >= 20) return "c-4";
             if (count >= 10) return "c-3";
             if (count >= 4)  return "c-2";
             if (count >= 1)  return "c-1";
-
             return "c-0";
         }
 
         function renderMap() {
-
             document.querySelectorAll("td[data-pref]").forEach(td => {
-
                 const key = td.getAttribute("data-pref");
                 const data = prefecturesData[key];
                 const label = td.innerText.trim();
 
                 if (data && label) {
-
                     const colorClass = getColorClass(data.count);
-
-                    td.innerHTML =
-                        `<a href="#" class="area-btn ${colorClass}" onclick="openModal('${key}')">${label}</a>`;
-
+                    td.innerHTML = `<a href="#" class="area-btn ${colorClass}" onclick="openModal('${key}')">${label}</a>`;
                 }
-
             });
-
         }
 
         function openModal(key) {
-
             currentActiveKey = key;
 
             const data = prefecturesData[key];
@@ -562,167 +338,121 @@
             } else {
 
                 listEl.innerHTML = data.messages.map(m => {
-
                     return `
                         <div class="message-item">
                             <div class="message-header">
-                                <a
-                                    href="${m.threads_url}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="name-threads-link"
-                                >
-                                    ${m.display_name} ↗
-                                </a>
+                                <a href="${m.threads_url}" target="_blank" rel="noopener noreferrer" class="name-threads-link">${m.display_name} ↗</a>
                             </div>
                             <div>${m.message}</div>
                         </div>
                     `;
-
                 }).join('');
-
             }
 
             document.getElementById("modal").style.display = "flex";
-
         }
 
         function closeModal() {
-
             document.getElementById("modal").style.display = "none";
-
             document.getElementById("userThreads").value = "";
             document.getElementById("userMessage").value = "";
             document.getElementById("userDeleteKey").value = "";
-
         }
 
-        document
-            .getElementById("messageForm")
-            .addEventListener("submit", async function(e) {
+        document.getElementById("messageForm").addEventListener("submit", async function(e) {
 
-                e.preventDefault();
+            e.preventDefault();
 
-                const threads =
-                    document.getElementById("userThreads").value.trim();
+            const threads =
+                document.getElementById("userThreads").value.trim();
 
-                const text =
-                    document.getElementById("userMessage").value.trim();
+            const text =
+                document.getElementById("userMessage").value.trim();
 
-                const deleteKey =
-                    document.getElementById("userDeleteKey").value.trim();
+            const deleteKey =
+                document.getElementById("userDeleteKey").value.trim();
 
-                const threadsPattern =
-                    /^https:\/\/(www\.)?threads\.(net|com)\/.+/i;
+            const threadsPattern =
+                /^https:\/\/(www\.)?threads\.(net|com)\/.+/i;
 
-                if (!threadsPattern.test(threads)) {
+            if (!threadsPattern.test(threads)) {
+                alert("ThreadsのプロフィールURLを入力してください。\n例: https://www.threads.net/@your_id");
+                return;
+            }
 
-                    alert(
-                        "ThreadsのプロフィールURLを入力してください。\n" +
-                        "例: https://www.threads.net/@your_id"
-                    );
+            if (!/^[A-Za-z0-9]{4}$/.test(deleteKey)) {
+                alert("削除キーは4文字の英数字で入力してください。");
+                return;
+            }
 
-                    return;
-                }
+            let name = "@Threadsユーザー";
 
-                if (!/^\d{4}$/.test(deleteKey)) {
+            const match =
+                threads.match(/threads\.(?:net|com)\/@([a-zA-Z0-9_.]+)/i);
 
-                    alert("削除キーは4桁の数字で入力してください。");
+            if (match && match[1]) {
+                name = "@" + match[1];
+            }
 
-                    return;
-                }
+            if (currentActiveKey && prefecturesData[currentActiveKey]) {
 
-                let name = "@Threadsユーザー";
+                const btn = document.getElementById("submitBtn");
 
-                const match =
-                    threads.match(
-                        /threads\.(?:net|com)\/@([a-zA-Z0-9_.]+)/i
-                    );
+                btn.disabled = true;
+                btn.innerText = "送信中...";
 
-                if (match && match[1]) {
-                    name = "@" + match[1];
-                }
+                try {
 
-                if (
-                    currentActiveKey &&
-                    prefecturesData[currentActiveKey]
-                ) {
+                    const res = await fetch('/api/post', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pref: currentActiveKey,
+                            threads: threads,
+                            name: name,
+                            text: text,
+                            delete_key: deleteKey
+                        })
+                    });
 
-                    const btn =
-                        document.getElementById("submitBtn");
+                    if (res.ok) {
 
-                    btn.disabled = true;
-                    btn.innerText = "送信中...";
+                        alert(
+                            `${prefecturesData[currentActiveKey].name}に書き込みました！`
+                        );
 
-                    try {
+                        closeModal();
 
-                        const res = await fetch('/api/post', {
+                        await loadPosts();
 
-                            method: 'POST',
+                    } else {
 
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
+                        const errorText = await res.text();
 
-                            body: JSON.stringify({
-
-                                pref: currentActiveKey,
-
-                                threads: threads,
-
-                                name: name,
-
-                                text: text,
-
-                                delete_key: deleteKey
-
-                            })
-
-                        });
-
-                        if (res.ok) {
-
-                            alert(
-                                `${prefecturesData[currentActiveKey].name}に書き込みました！`
-                            );
-
-                            closeModal();
-
-                            await loadPosts();
-
-                        } else {
-
-                            const errorText =
-                                await res.text();
-
-                            alert(
-                                "保存に失敗しました。\n\n" +
-                                "サーバーからの回答：\n" +
-                                errorText
-                            );
-
-                        }
-
-                    } catch (err) {
-
-                        alert("通信エラーが発生しました。");
-
-                    } finally {
-
-                        btn.disabled = false;
-                        btn.innerText = "書き込む！";
-
+                        alert(
+                            "保存に失敗しました。\n\nサーバーからの回答：\n" +
+                            errorText
+                        );
                     }
 
-                }
+                } catch (err) {
 
-            });
+                    alert("通信エラーが発生しました。");
+
+                } finally {
+
+                    btn.disabled = false;
+                    btn.innerText = "書き込む！";
+                }
+            }
+        });
 
         // 最初の読み込み
         renderMap();
         loadPosts();
-
     </script>
-
 </body>
 </html>
+```
