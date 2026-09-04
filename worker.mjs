@@ -56,32 +56,13 @@ export default {
       try {
         const body = await request.json();
 
-        const {
-          pref,
-          threads,
-          name,
-          text,
-          delete_key
-        } = body;
+        const { pref, threads, name, text, delete_key } = body;
 
         // 必須項目チェック
         if (!pref || !threads || !text || !delete_key) {
           return new Response(
             JSON.stringify({
               error: "必要な項目が入力されていません。"
-            }),
-            {
-              status: 400,
-              headers: corsHeaders
-            }
-          );
-        }
-
-        // 削除キーは4桁の数字のみ
-        if (!/^\d{4}$/.test(delete_key)) {
-          return new Response(
-            JSON.stringify({
-              error: "削除キーは4桁の数字で入力してください。"
             }),
             {
               status: 400,
@@ -150,6 +131,19 @@ export default {
           );
         }
 
+        // 削除キーは4文字の英数字
+        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
+          return new Response(
+            JSON.stringify({
+              error: "削除キーは4文字の英数字で入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
         // IPアドレス取得
         const ip =
           request.headers.get("CF-Connecting-IP") ||
@@ -193,9 +187,7 @@ export default {
 
         // 新しい投稿を保存
         await env.DB.prepare(
-          `INSERT INTO posts
-           (pref, threads_url, display_name, message, delete_key)
-           VALUES (?, ?, ?, ?, ?)`
+          "INSERT INTO posts (pref, threads_url, display_name, message, delete_key) VALUES (?, ?, ?, ?, ?)"
         )
           .bind(
             pref,
@@ -263,16 +255,13 @@ export default {
       try {
         const body = await request.json();
 
-        const {
-          threads,
-          delete_key
-        } = body;
+        const { threads, delete_key } = body;
 
         // 必須項目チェック
         if (!threads || !delete_key) {
           return new Response(
             JSON.stringify({
-              error: "Threads URLと削除キーを入力してください。"
+              error: "必要な項目が入力されていません。"
             }),
             {
               status: 400,
@@ -281,11 +270,11 @@ export default {
           );
         }
 
-        // 削除キーは4桁の数字のみ
-        if (!/^\d{4}$/.test(delete_key)) {
+        // 削除キーは4文字の英数字
+        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
           return new Response(
             JSON.stringify({
-              error: "削除キーは4桁の数字で入力してください。"
+              error: "削除キーは4文字の英数字で入力してください。"
             }),
             {
               status: 400,
@@ -301,6 +290,7 @@ export default {
           .bind(threads, delete_key)
           .run();
 
+        // 一致する投稿がなかった場合
         if (!result.meta || result.meta.changes === 0) {
           return new Response(
             JSON.stringify({
