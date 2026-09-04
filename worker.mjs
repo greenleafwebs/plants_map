@@ -30,16 +30,20 @@ export default {
     }
 
     // =========================================================
-    // Threadsアカウント存在確認テスト
+    // Threadsアカウント存在確認用・診断API
+    // ※現在はテスト専用。本番の投稿処理には使用しない
     // =========================================================
-    if (url.pathname === "/api/test-threads" && request.method === "GET") {
+    if (
+      url.pathname === "/api/test-threads" &&
+      request.method === "GET"
+    ) {
       try {
-        const threadsUrl = url.searchParams.get("url");
+        const targetUrl = url.searchParams.get("url");
 
-        if (!threadsUrl) {
+        if (!targetUrl) {
           return new Response(
             JSON.stringify({
-              error: "urlを指定してください。"
+              error: "urlパラメータがありません。"
             }),
             {
               status: 400,
@@ -48,12 +52,17 @@ export default {
           );
         }
 
-        // URLチェック
-        let targetUrl;
+        // Threads URLからユーザー名を取得
+        let username = "";
 
         try {
-          targetUrl = new URL(threadsUrl);
-        } catch {
+          const parsed = new URL(targetUrl);
+          const match = parsed.pathname.match(/^\/@?([^/]+)/);
+
+          if (match) {
+            username = decodeURIComponent(match[1]);
+          }
+        } catch (e) {
           return new Response(
             JSON.stringify({
               error: "URLの形式が正しくありません。"
@@ -65,17 +74,10 @@ export default {
           );
         }
 
-        // Threads以外にはアクセスしない
-        if (
-          targetUrl.protocol !== "https:" ||
-          !(
-            targetUrl.hostname === "www.threads.com" ||
-            targetUrl.hostname === "threads.com"
-          )
-        ) {
+        if (!username) {
           return new Response(
             JSON.stringify({
-              error: "ThreadsのURLのみ指定できます。"
+              error: "ユーザー名を取得できませんでした。"
             }),
             {
               status: 400,
@@ -84,152 +86,202 @@ export default {
           );
         }
 
-        // URLからユーザー名を取得
-        const pathParts = targetUrl.pathname
-          .split("/")
-          .filter(Boolean);
-
-        const username =
-          pathParts.length > 0
-            ? decodeURIComponent(pathParts[0]).replace(/^@/, "")
-            : "";
-
-        // Threadsへアクセス
-        const response = await fetch(targetUrl.toString(), {
+        // Threadsページを取得
+        const response = await fetch(targetUrl, {
           method: "GET",
           headers: {
             "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36",
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0.0.0 Safari/537.36",
             "Accept":
-              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language":
-              "ja,en-US;q=0.9,en;q=0.8"
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
           },
           redirect: "follow"
         });
 
         const html = await response.text();
 
-        const lowerHtml = html.toLowerCase();
+        // -----------------------------------------------------
+        // まず「対象ユーザー名そのもの」がHTMLに
+        // 何回登場しているかを確認
+        // -----------------------------------------------------
 
-        // =====================================================
-        // アカウント情報らしき文字列を調査
-        // =====================================================
+        const exactRegex = new RegExp(
+          username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          "gi"
+        );
 
-        const keywords = [
-          username,
-          "is_profile",
-          "profile",
-          "username",
-          "full_name",
-          "biography",
-          "user_id",
-          "\"id\"",
-          "\"pk\"",
-          "not_found",
-          "not found",
-          "page not found",
-          "error",
-          "status"
-        ];
+        const exactMatches = html.match(exactRegex) || [];
 
-        const matches = [];
+        // -----------------------------------------------------
+        // 各パターンを検索
+        // -----------------------------------------------------
 
-        for (const keyword of keywords) {
-          if (!keyword) continue;
+        const escapedUsername = username.replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&"
+        );
 
-          const lowerKeyword = keyword.toLowerCase();
+        const patterns = {
+          exact_username: escapedUsername,
+          quoted_username:
+            `"username":"${escapedUsername}"`,
+          quoted_username_space:
+            `"username": "${escapedUsername}"`,
+          at_username:
+            `@${escapedUsername}`,
+          handle:
+            `"handle":"${escapedUsername}"`,
+          handle_space:
+            `"handle": "${escapedUsername}"`,
+          name:
+            `"name":"${escapedUsername}"`,
+          name_space:
+            `"name": "${escapedUsername}"`
+        };
 
-          let searchFrom = 0;
-          let count = 0;
+        const patternResults = {};
 
-          while (count < 5) {
-            const index = lowerHtml.indexOf(
-              lowerKeyword,
-              searchFrom
-            );
+        for (const [key, pattern] of Object.entries(patterns)) {
+          try {
+            const regex = new RegExp(pattern, "gi");
+            const matches = html.match(regex) || [];
 
-            if (index === -1) {
-              break;
-            }
-
-            const start = Math.max(0, index - 250);
-            const end = Math.min(
-              html.length,
-              index + keyword.length + 250
-            );
-
-            matches.push({
-              keyword: keyword,
-              position: index,
-              context: html.substring(start, end)
-            });
-
-            searchFrom = index + lowerKeyword.length;
-            count++;
+            patternResults[key] = {
+              count: matches.length,
+              found: matches.length > 0
+            };
+          } catch (e) {
+            patternResults[key] = {
+              count: 0,
+              found: false,
+              error: e.message
+            };
           }
         }
 
-        // =====================================================
-        // HTML内のJSONらしき部分を調査
-        // =====================================================
+        // -----------------------------------------------------
+        // ユーザー名が見つかった周辺のHTMLを取得
+        // 最大10か所
+        // -----------------------------------------------------
 
-        const scriptMatches = [];
+        const contexts = [];
 
-        const scriptRegex =
-          /<script[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi;
+        let searchPosition = 0;
 
-        let scriptMatch;
-        let scriptCount = 0;
+        while (contexts.length < 10) {
+          const index = html
+            .toLowerCase()
+            .indexOf(username.toLowerCase(), searchPosition);
 
-        while (
-          (scriptMatch = scriptRegex.exec(html)) !== null &&
-          scriptCount < 10
-        ) {
-          const content = scriptMatch[1];
+          if (index === -1) {
+            break;
+          }
 
-          scriptMatches.push({
-            length: content.length,
-            preview: content.substring(0, 1000)
+          const start = Math.max(0, index - 300);
+          const end = Math.min(
+            html.length,
+            index + username.length + 300
+          );
+
+          contexts.push({
+            position: index,
+            text: html.substring(start, end)
           });
 
-          scriptCount++;
+          searchPosition =
+            index + Math.max(username.length, 1);
         }
 
-        // =====================================================
-        // title / description を取得
-        // =====================================================
+        // -----------------------------------------------------
+        // HTML内のJSON scriptを調査
+        // -----------------------------------------------------
 
-        const titleMatch = html.match(
-          /<title[^>]*>([\s\S]*?)<\/title>/i
-        );
+        const scriptMatches =
+          html.match(
+            /<script[^>]*type=["']application\/json["'][^>]*>[\s\S]*?<\/script>/gi
+          ) || [];
 
-        const descriptionMatch = html.match(
-          /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i
-        );
+        const jsonScriptInfo = [];
 
-        const ogTitleMatch = html.match(
-          /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i
-        );
+        for (let i = 0; i < scriptMatches.length; i++) {
+          const script = scriptMatches[i];
 
-        const ogDescriptionMatch = html.match(
-          /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i
-        );
+          const lowerScript =
+            script.toLowerCase();
 
-        // =====================================================
-        // 結果を返す
-        // =====================================================
+          if (
+            lowerScript.includes(
+              username.toLowerCase()
+            )
+          ) {
+            jsonScriptInfo.push({
+              index: i,
+              length: script.length,
+              username_found: true,
+              preview: script.substring(
+                0,
+                1000
+              )
+            });
+          }
+        }
+
+        // -----------------------------------------------------
+        // Threadsページ内でプロフィール関連と思われる
+        // データを少しだけ確認
+        // -----------------------------------------------------
+
+        const profileRelated = [];
+
+        const profileRegex =
+          /.{0,200}(profile|username|user_id|handle).{0,300}/gi;
+
+        let profileMatch;
+
+        while (
+          (profileMatch =
+            profileRegex.exec(html)) !== null &&
+          profileRelated.length < 30
+        ) {
+          const text = profileMatch[0];
+
+          // 対象ユーザー名そのものを含むものを優先
+          profileRelated.push(text);
+        }
+
+        // -----------------------------------------------------
+        // 基本情報
+        // -----------------------------------------------------
+
+        const titleMatch =
+          html.match(
+            /<title[^>]*>([\s\S]*?)<\/title>/i
+          );
+
+        const descriptionMatch =
+          html.match(
+            /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i
+          );
+
+        const ogTitleMatch =
+          html.match(
+            /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i
+          );
+
+        const ogDescriptionMatch =
+          html.match(
+            /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i
+          );
 
         return new Response(
           JSON.stringify(
             {
-              success: true,
-
-              requested_url: threadsUrl,
-
+              target_url: targetUrl,
               final_url: response.url,
 
               status: response.status,
+              ok: response.ok,
 
               username: username,
 
@@ -239,27 +291,82 @@ export default {
                 ? titleMatch[1]
                 : null,
 
-              description: descriptionMatch
-                ? descriptionMatch[1]
-                : null,
+              description:
+                descriptionMatch
+                  ? descriptionMatch[1]
+                  : null,
 
-              og_title: ogTitleMatch
-                ? ogTitleMatch[1]
-                : null,
+              og_title:
+                ogTitleMatch
+                  ? ogTitleMatch[1]
+                  : null,
 
-              og_description: ogDescriptionMatch
-                ? ogDescriptionMatch[1]
-                : null,
+              og_description:
+                ogDescriptionMatch
+                  ? ogDescriptionMatch[1]
+                  : null,
 
-              json_script_count: scriptMatches.length,
+              // ユーザー名の単純な出現回数
+              exact_username_count:
+                exactMatches.length,
 
-              json_scripts: scriptMatches,
+              // 各パターンの検索結果
+              pattern_results:
+                patternResults,
 
-              matches: matches
+              // ユーザー名周辺のHTML
+              username_contexts:
+                contexts,
+
+              // ユーザー名を含むJSON script
+              json_scripts_containing_username:
+                jsonScriptInfo,
+
+              // JSON script総数
+              json_script_count:
+                scriptMatches.length,
+
+              // プロフィール関連の断片
+              profile_related_samples:
+                profileRelated
             },
             null,
             2
           ),
+          {
+            headers: corsHeaders
+          }
+        );
+
+      } catch (e) {
+        return new Response(
+          JSON.stringify({
+            error: e.message,
+            stack: e.stack
+          }),
+          {
+            status: 500,
+            headers: corsHeaders
+          }
+        );
+      }
+    }
+
+    // =========================================================
+    // 投稿データを取得
+    // =========================================================
+    if (
+      url.pathname === "/api/get" &&
+      request.method === "GET"
+    ) {
+      try {
+        const { results } =
+          await env.DB.prepare(
+            "SELECT * FROM posts ORDER BY id DESC"
+          ).all();
+
+        return new Response(
+          JSON.stringify(results),
           {
             headers: corsHeaders
           }
@@ -279,33 +386,12 @@ export default {
     }
 
     // =========================================================
-    // 投稿データを取得
-    // =========================================================
-    if (url.pathname === "/api/get" && request.method === "GET") {
-      try {
-        const { results } = await env.DB.prepare(
-          "SELECT * FROM posts ORDER BY id DESC"
-        ).all();
-
-        return new Response(JSON.stringify(results), {
-          headers: corsHeaders
-        });
-
-      } catch (e) {
-        return new Response(
-          JSON.stringify({ error: e.message }),
-          {
-            status: 500,
-            headers: corsHeaders
-          }
-        );
-      }
-    }
-
-    // =========================================================
     // 投稿データを保存
     // =========================================================
-    if (url.pathname === "/api/post" && request.method === "POST") {
+    if (
+      url.pathname === "/api/post" &&
+      request.method === "POST"
+    ) {
       try {
         const body = await request.json();
 
@@ -318,10 +404,16 @@ export default {
         } = body;
 
         // 必須項目チェック
-        if (!pref || !threads || !text || !delete_key) {
+        if (
+          !pref ||
+          !threads ||
+          !text ||
+          !delete_key
+        ) {
           return new Response(
             JSON.stringify({
-              error: "必要な項目が入力されていません。"
+              error:
+                "必要な項目が入力されていません。"
             }),
             {
               status: 400,
@@ -331,7 +423,11 @@ export default {
         }
 
         // 削除キー4文字チェック
-        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
+        if (
+          !/^[A-Za-z0-9]{4}$/.test(
+            delete_key
+          )
+        ) {
           return new Response(
             JSON.stringify({
               error:
@@ -362,7 +458,8 @@ export default {
         if (/<[^>]*>/i.test(text)) {
           return new Response(
             JSON.stringify({
-              error: "HTMLタグは使用できません。"
+              error:
+                "HTMLタグは使用できません。"
             }),
             {
               status: 400,
@@ -390,11 +487,15 @@ export default {
         }
 
         // NGワードチェック
-        const normalizedText = text.toLowerCase();
+        const normalizedText =
+          text.toLowerCase();
 
-        const ngWord = NG_WORDS.find(word =>
-          normalizedText.includes(word.toLowerCase())
-        );
+        const ngWord =
+          NG_WORDS.find(word =>
+            normalizedText.includes(
+              word.toLowerCase()
+            )
+          );
 
         if (ngWord) {
           return new Response(
@@ -411,25 +512,35 @@ export default {
 
         // IPアドレス取得
         const ip =
-          request.headers.get("CF-Connecting-IP") ||
-          request.headers.get("X-Forwarded-For") ||
+          request.headers.get(
+            "CF-Connecting-IP"
+          ) ||
+          request.headers.get(
+            "X-Forwarded-For"
+          ) ||
           "unknown";
 
         const now = Date.now();
-        const tenMinutes = 10 * 60 * 1000;
+        const tenMinutes =
+          10 * 60 * 1000;
 
         // IPの投稿制限を確認
-        const limit = await env.DB.prepare(
-          "SELECT count, first_post_at FROM post_limits WHERE ip = ?"
-        )
-          .bind(ip)
-          .first();
+        const limit =
+          await env.DB.prepare(
+            "SELECT count, first_post_at FROM post_limits WHERE ip = ?"
+          )
+            .bind(ip)
+            .first();
 
         if (limit) {
-          const elapsed = now - limit.first_post_at;
+          const elapsed =
+            now - limit.first_post_at;
 
           // 10分以内に3回以上投稿していたら制限
-          if (elapsed < tenMinutes && limit.count >= 3) {
+          if (
+            elapsed < tenMinutes &&
+            limit.count >= 3
+          ) {
             return new Response(
               JSON.stringify({
                 error:
@@ -465,7 +576,8 @@ export default {
 
         // DBへの保存が成功した後に投稿回数をカウント
         if (limit) {
-          const elapsed = now - limit.first_post_at;
+          const elapsed =
+            now - limit.first_post_at;
 
           // 10分経過していたら新しいカウントを開始
           if (elapsed >= tenMinutes) {
@@ -518,9 +630,13 @@ export default {
     // =========================================================
     // 投稿削除
     // =========================================================
-    if (url.pathname === "/api/delete" && request.method === "POST") {
+    if (
+      url.pathname === "/api/delete" &&
+      request.method === "POST"
+    ) {
       try {
-        const body = await request.json();
+        const body =
+          await request.json();
 
         const {
           threads,
@@ -530,7 +646,8 @@ export default {
         if (!threads || !delete_key) {
           return new Response(
             JSON.stringify({
-              error: "必要な項目が入力されていません。"
+              error:
+                "必要な項目が入力されていません。"
             }),
             {
               status: 400,
@@ -539,7 +656,11 @@ export default {
           );
         }
 
-        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
+        if (
+          !/^[A-Za-z0-9]{4}$/.test(
+            delete_key
+          )
+        ) {
           return new Response(
             JSON.stringify({
               error:
@@ -552,16 +673,24 @@ export default {
           );
         }
 
-        const result = await env.DB.prepare(
-          "DELETE FROM posts WHERE threads_url = ? AND delete_key = ?"
-        )
-          .bind(threads, delete_key)
-          .run();
+        const result =
+          await env.DB.prepare(
+            "DELETE FROM posts WHERE threads_url = ? AND delete_key = ?"
+          )
+            .bind(
+              threads,
+              delete_key
+            )
+            .run();
 
-        if (!result.meta || result.meta.changes === 0) {
+        if (
+          !result.meta ||
+          result.meta.changes === 0
+        ) {
           return new Response(
             JSON.stringify({
-              error: "削除キーが一致しません。"
+              error:
+                "削除キーが一致しません。"
             }),
             {
               status: 403,
