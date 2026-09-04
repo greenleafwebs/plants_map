@@ -29,7 +29,126 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // =========================================================
+    // Threadsアカウント存在確認テスト
+    // =========================================================
+    if (url.pathname === "/api/test-threads" && request.method === "GET") {
+      try {
+        const threadsUrl = url.searchParams.get("url");
+
+        if (!threadsUrl) {
+          return new Response(
+            JSON.stringify({
+              error: "urlを指定してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // Threads以外のURLにはアクセスしない
+        let targetUrl;
+
+        try {
+          targetUrl = new URL(threadsUrl);
+        } catch {
+          return new Response(
+            JSON.stringify({
+              error: "URLの形式が正しくありません。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        if (
+          targetUrl.protocol !== "https:" ||
+          !(
+            targetUrl.hostname === "www.threads.com" ||
+            targetUrl.hostname === "threads.com"
+          )
+        ) {
+          return new Response(
+            JSON.stringify({
+              error: "ThreadsのURLのみ指定できます。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
+        // Threadsへアクセス
+        const response = await fetch(targetUrl.toString(), {
+          method: "GET",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36",
+            "Accept":
+              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
+          },
+          redirect: "follow"
+        });
+
+        const html = await response.text();
+
+        const loginText = "Instagramアカウントでログイン";
+
+        const containsLoginText = html.includes(loginText);
+
+        // 該当文字の前後を確認用に取得
+        let context = null;
+
+        const index = html.indexOf(loginText);
+
+        if (index !== -1) {
+          const start = Math.max(0, index - 200);
+          const end = Math.min(
+            html.length,
+            index + loginText.length + 200
+          );
+
+          context = html.substring(start, end);
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            requested_url: threadsUrl,
+            final_url: response.url,
+            status: response.status,
+            html_length: html.length,
+            contains_login_text: containsLoginText,
+            login_text: loginText,
+            context: context
+          }),
+          {
+            headers: corsHeaders
+          }
+        );
+
+      } catch (e) {
+        return new Response(
+          JSON.stringify({
+            error: e.message
+          }),
+          {
+            status: 500,
+            headers: corsHeaders
+          }
+        );
+      }
+    }
+
+    // =========================================================
     // 投稿データを取得
+    // =========================================================
     if (url.pathname === "/api/get" && request.method === "GET") {
       try {
         const { results } = await env.DB.prepare(
@@ -51,12 +170,20 @@ export default {
       }
     }
 
+    // =========================================================
     // 投稿データを保存
+    // =========================================================
     if (url.pathname === "/api/post" && request.method === "POST") {
       try {
         const body = await request.json();
 
-        const { pref, threads, name, text, delete_key } = body;
+        const {
+          pref,
+          threads,
+          name,
+          text,
+          delete_key
+        } = body;
 
         // 必須項目チェック
         if (!pref || !threads || !text || !delete_key) {
@@ -71,11 +198,26 @@ export default {
           );
         }
 
+        // 削除キー4文字チェック
+        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "削除キーは4文字の英数字で入力してください。"
+            }),
+            {
+              status: 400,
+              headers: corsHeaders
+            }
+          );
+        }
+
         // 140文字制限
         if ([...text].length > 140) {
           return new Response(
             JSON.stringify({
-              error: "メッセージは140文字以内で入力してください。"
+              error:
+                "メッセージは140文字以内で入力してください。"
             }),
             {
               status: 400,
@@ -99,11 +241,14 @@ export default {
 
         // URL禁止
         if (
-          /https?:\/\/|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|net|org|jp|co\.jp|info|biz)(\/[^\s]*)?/i.test(text)
+          /https?:\/\/|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|net|org|jp|co\.jp|info|biz)(\/[^\s]*)?/i.test(
+            text
+          )
         ) {
           return new Response(
             JSON.stringify({
-              error: "メッセージにURLを入れることはできません。"
+              error:
+                "メッセージにURLを入れることはできません。"
             }),
             {
               status: 400,
@@ -122,20 +267,8 @@ export default {
         if (ngWord) {
           return new Response(
             JSON.stringify({
-              error: "使用できない言葉が含まれています。"
-            }),
-            {
-              status: 400,
-              headers: corsHeaders
-            }
-          );
-        }
-
-        // 削除キーは4文字の英数字
-        if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
-          return new Response(
-            JSON.stringify({
-              error: "削除キーは4文字の英数字で入力してください。"
+              error:
+                "使用できない言葉が含まれています。"
             }),
             {
               status: 400,
@@ -250,14 +383,18 @@ export default {
       }
     }
 
-    // 投稿を削除
+    // =========================================================
+    // 投稿削除
+    // =========================================================
     if (url.pathname === "/api/delete" && request.method === "POST") {
       try {
         const body = await request.json();
 
-        const { threads, delete_key } = body;
+        const {
+          threads,
+          delete_key
+        } = body;
 
-        // 必須項目チェック
         if (!threads || !delete_key) {
           return new Response(
             JSON.stringify({
@@ -270,11 +407,11 @@ export default {
           );
         }
 
-        // 削除キーは4文字の英数字
         if (!/^[A-Za-z0-9]{4}$/.test(delete_key)) {
           return new Response(
             JSON.stringify({
-              error: "削除キーは4文字の英数字で入力してください。"
+              error:
+                "削除キーは4文字の英数字で入力してください。"
             }),
             {
               status: 400,
@@ -283,14 +420,12 @@ export default {
           );
         }
 
-        // Threads URLと削除キーが一致する投稿だけ削除
         const result = await env.DB.prepare(
           "DELETE FROM posts WHERE threads_url = ? AND delete_key = ?"
         )
           .bind(threads, delete_key)
           .run();
 
-        // 一致する投稿がなかった場合
         if (!result.meta || result.meta.changes === 0) {
           return new Response(
             JSON.stringify({
@@ -325,7 +460,9 @@ export default {
       }
     }
 
+    // =========================================================
     // API以外は静的ファイルを返す
+    // =========================================================
     return env.ASSETS.fetch(request);
   }
 };
