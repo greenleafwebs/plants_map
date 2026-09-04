@@ -48,7 +48,7 @@ export default {
           );
         }
 
-        // Threads以外のURLにはアクセスしない
+        // URLチェック
         let targetUrl;
 
         try {
@@ -65,6 +65,7 @@ export default {
           );
         }
 
+        // Threads以外にはアクセスしない
         if (
           targetUrl.protocol !== "https:" ||
           !(
@@ -83,6 +84,16 @@ export default {
           );
         }
 
+        // URLからユーザー名を取得
+        const pathParts = targetUrl.pathname
+          .split("/")
+          .filter(Boolean);
+
+        const username =
+          pathParts.length > 0
+            ? decodeURIComponent(pathParts[0]).replace(/^@/, "")
+            : "";
+
         // Threadsへアクセス
         const response = await fetch(targetUrl.toString(), {
           method: "GET",
@@ -91,30 +102,37 @@ export default {
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36",
             "Accept":
               "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
+            "Accept-Language":
+              "ja,en-US;q=0.9,en;q=0.8"
           },
           redirect: "follow"
         });
 
         const html = await response.text();
 
-        const loginText = "Instagramアカウントでログイン";
+        // ユーザー名がHTMLに含まれているか確認
+        const containsUsername =
+          username !== "" &&
+          html.toLowerCase().includes(username.toLowerCase());
 
-        const containsLoginText = html.includes(loginText);
-
-        // 該当文字の前後を確認用に取得
+        // ユーザー名が見つかった位置の前後を確認
         let context = null;
 
-        const index = html.indexOf(loginText);
+        if (containsUsername) {
+          const lowerHtml = html.toLowerCase();
+          const lowerUsername = username.toLowerCase();
 
-        if (index !== -1) {
-          const start = Math.max(0, index - 200);
-          const end = Math.min(
-            html.length,
-            index + loginText.length + 200
-          );
+          const index = lowerHtml.indexOf(lowerUsername);
 
-          context = html.substring(start, end);
+          if (index !== -1) {
+            const start = Math.max(0, index - 200);
+            const end = Math.min(
+              html.length,
+              index + username.length + 200
+            );
+
+            context = html.substring(start, end);
+          }
         }
 
         return new Response(
@@ -123,9 +141,9 @@ export default {
             requested_url: threadsUrl,
             final_url: response.url,
             status: response.status,
+            username: username,
             html_length: html.length,
-            contains_login_text: containsLoginText,
-            login_text: loginText,
+            contains_username: containsUsername,
             context: context
           }),
           {
